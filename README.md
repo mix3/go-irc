@@ -1,3 +1,5 @@
+[![Build Status](https://drone.io/github.com/mix3/go-irc/status.png)](https://drone.io/github.com/mix3/go-irc/latest)
+
 # go-irc
 
 ## SYNOPSIS
