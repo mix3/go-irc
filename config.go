@@ -17,7 +17,6 @@ type Config struct {
 	SSLConfig *tls.Config
 	Interval  time.Duration
 	PingFreq  time.Duration
-	Callback  func(*Conn, *Event)
 	Logger    golog.Logger
 }
 

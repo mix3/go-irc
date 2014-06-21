@@ -6,13 +6,12 @@ const (
 )
 
 func (conn *Conn) callback(e *Event) {
-	conn.defaultCallback(e)
-	if conn.cfg.Callback != nil {
-		conn.cfg.Callback(conn, e)
+	if conn.embedded != nil {
+		conn.embedded.Callback(e)
 	}
 }
 
-func (conn *Conn) defaultCallback(e *Event) {
+func (conn *Conn) DefaultCallback(e *Event) {
 	switch e.Code {
 	case REGISTER:
 		if 0 < len(conn.password) {

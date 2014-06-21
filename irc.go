@@ -13,10 +13,9 @@ import (
 	golog "github.com/umisama/golog"
 )
 
-const (
-	CONNECT    = "CONNECT"
-	DISCONNECT = "DISCONNECT"
-)
+type Embed interface {
+	Callback(*Event)
+}
 
 type Conn struct {
 	sync.WaitGroup
@@ -35,6 +34,7 @@ type Conn struct {
 	quit      chan struct{}
 	err       chan error
 	connected bool
+	embedded  Embed
 }
 
 func New(cfg *Config) (*Conn, error) {
@@ -53,6 +53,10 @@ func New(cfg *Config) (*Conn, error) {
 		err:      make(chan error, 3),
 	}
 	return conn, nil
+}
+
+func (conn *Conn) SetEmbed(embed Embed) {
+	conn.embedded = embed
 }
 
 func (conn *Conn) recv() {
