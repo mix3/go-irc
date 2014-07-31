@@ -63,7 +63,7 @@ func main() {
 
 ## MISC
 
-go-irc is inspired by [fluffle/goir](https://github.com/fluffle/goirc), and [thoj/go-ircevent](https://github.com/thoj/go-ircevent)
+Many codes was copied from [fluffle/goir](https://github.com/fluffle/goirc), and [thoj/go-ircevent](https://github.com/thoj/go-ircevent).
 
 ## LICENSE
 
