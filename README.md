@@ -60,3 +60,11 @@ func main() {
 	}
 }
 ```
+
+## MISC
+
+go-irc is inspired by [fluffle/goir](https://github.com/fluffle/goirc), and [thoj/go-ircevent](https://github.com/thoj/go-ircevent)
+
+## LICENSE
+
+This code is (c) 2014 mix3, and released under the same licence terms as Go itself.
