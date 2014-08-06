@@ -42,7 +42,7 @@ func (c *Config) Setup() {
 	}
 	if c.Logger == nil {
 		level := golog.LogLevel_Info
-		if os.Getenv("IKUSAN_DEBUG") != "" {
+		if os.Getenv("DEBUG") != "" {
 			level = golog.LogLevel_Debug
 		}
 		var err error
