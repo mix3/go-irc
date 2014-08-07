@@ -1,71 +1,61 @@
-package irc
+package irc_test
 
 import (
-	"log"
 	"testing"
+
+	"github.com/mix3/go-irc"
 )
 
-type MyConnA struct {
-	*Conn
-}
-
-func (conn *MyConnA) Callback(e *Event) {
-	conn.DefaultCallback(e)
-	switch e.Code {
-	case "001":
-		conn.Join("#ikusan_test")
-	case "366":
-		conn.Privmsg("#ikusan_test", "Test Message")
-		conn.Nick("ikusan-newnick")
-	case "NICK":
-		conn.Disconnect()
-	case DISCONNECTED:
-		log.Printf("[INFO   ] disconnect")
-	}
-}
-
 func TestConnection(t *testing.T) {
-	conn, err := New(&Config{
+	conn, err := irc.New(&irc.Config{
 		Nick:     "ikusan",
 		User:     "ikusan",
 		RealName: "ikusan",
 	})
-	myconn := &MyConnA{conn}
-	myconn.SetEmbed(myconn)
+	conn.CallbackerFunc(func(conn *irc.Conn, e *irc.Event) {
+		irc.DefaultCallback(conn, e)
+		switch e.Code {
+		case "001":
+			conn.Join("#ikusan_test")
+		case "366":
+			conn.Privmsg("#ikusan_test", "Test Message")
+			conn.Nick("ikusan-newnick")
+		case "NICK":
+			conn.Disconnect()
+		case irc.DISCONNECTED:
+			conn.Logger().Debugf("[INFO   ] disconnect")
+		}
+	})
 	if err != nil {
 		t.Fatalf("error new %s", err)
 	}
-	quit, err := myconn.Connect("irc.freenode.net", 6667)
+	quit, err := conn.Connect("irc.freenode.net", 6667)
 	if err != nil {
 		t.Fatalf("error connect %s", err)
 	}
 	<-quit
 }
 
-type MyConnB struct {
-	*Conn
-}
-
-func (conn *MyConnB) Callback(e *Event) {
-	conn.DefaultCallback(e)
-	switch e.Code {
-	case "001":
-		conn.Disconnect()
-	}
-}
-
 func TestReconnection(t *testing.T) {
-	conn, err := New(&Config{
+	cb := irc.CallbackFunc(func(conn *irc.Conn, e *irc.Event) {
+		irc.DefaultCallback(conn, e)
+		switch e.Code {
+		case "001":
+			conn.Disconnect()
+		case irc.DISCONNECTED:
+			conn.Logger().Debugf("[INFO   ] disconnect")
+		}
+	})
+	conn, err := irc.New(&irc.Config{
 		Nick:     "ikusan",
 		User:     "ikusan",
 		RealName: "ikusan",
 	})
-	myconn := &MyConnB{conn}
-	myconn.SetEmbed(myconn)
+	conn.Callbacker(cb)
 	if err != nil {
 		t.Fatalf("error new %s", err)
 	}
-	quit, err := myconn.Connect("irc.freenode.net", 6667)
+	quit, err := conn.Connect("irc.freenode.net", 6667)
 	if err != nil {
 		t.Fatalf("error connect %s", err)
 	}
@@ -77,7 +67,7 @@ func TestReconnection(t *testing.T) {
 				return
 			}
 			for {
-				if _, err = myconn.Reconnect(); err == nil {
+				if _, err = conn.Reconnect(); err == nil {
 					count++
 					break
 				}

@@ -13,28 +13,24 @@ import (
 	golog "github.com/umisama/golog"
 )
 
-type Embed interface {
-	Callback(*Event)
-}
-
 type Conn struct {
 	sync.WaitGroup
-	cfg       *Config
-	sock      net.Conn
-	nick      string
-	cnick     string
-	server    string
-	password  string
-	port      uint
-	io        *bufio.ReadWriter
-	in        chan *Event
-	out       chan string
-	end       chan struct{}
-	shutdown  chan struct{}
-	quit      chan struct{}
-	err       chan error
-	connected bool
-	embedded  Embed
+	cfg        *Config
+	sock       net.Conn
+	nick       string
+	cnick      string
+	server     string
+	password   string
+	port       uint
+	io         *bufio.ReadWriter
+	in         chan *Event
+	out        chan string
+	end        chan struct{}
+	shutdown   chan struct{}
+	quit       chan struct{}
+	err        chan error
+	connected  bool
+	callbacker Callbacker
 }
 
 func New(cfg *Config) (*Conn, error) {
@@ -53,10 +49,6 @@ func New(cfg *Config) (*Conn, error) {
 		err:      make(chan error),
 	}
 	return conn, nil
-}
-
-func (conn *Conn) SetEmbed(embed Embed) {
-	conn.embedded = embed
 }
 
 func (conn *Conn) recv() {
