@@ -5,13 +5,29 @@ const (
 	DISCONNECTED = "DISCONNECTED"
 )
 
-func (conn *Conn) callback(e *Event) {
-	if conn.embedded != nil {
-		conn.embedded.Callback(e)
-	}
+type Callbacker interface {
+	Callback(*Conn, *Event)
 }
 
-func (conn *Conn) DefaultCallback(e *Event) {
+type CallbackFunc func(*Conn, *Event)
+
+func (cf CallbackFunc) Callback(conn *Conn, e *Event) {
+	cf(conn, e)
+}
+
+func (conn *Conn) CallbackerFunc(f func(*Conn, *Event)) {
+	conn.callbacker = CallbackFunc(f)
+}
+
+func (conn *Conn) Callbacker(cf CallbackFunc) {
+	conn.callbacker = cf
+}
+
+func (conn *Conn) callback(e *Event) {
+	conn.callbacker.Callback(conn, e)
+}
+
+func DefaultCallback(conn *Conn, e *Event) {
 	switch e.Code {
 	case REGISTER:
 		if 0 < len(conn.password) {

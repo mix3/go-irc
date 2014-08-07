@@ -13,28 +13,24 @@ import (
 	golog "github.com/umisama/golog"
 )
 
-type Embed interface {
-	Callback(*Event)
-}
-
 type Conn struct {
 	sync.WaitGroup
-	cfg       *Config
-	sock      net.Conn
-	nick      string
-	cnick     string
-	server    string
-	password  string
-	port      uint
-	io        *bufio.ReadWriter
-	in        chan *Event
-	out       chan string
-	end       chan struct{}
-	shutdown  chan struct{}
-	quit      chan struct{}
-	err       chan error
-	connected bool
-	embedded  Embed
+	cfg        *Config
+	sock       net.Conn
+	nick       string
+	cnick      string
+	server     string
+	password   string
+	port       uint
+	io         *bufio.ReadWriter
+	in         chan *Event
+	out        chan string
+	end        chan struct{}
+	shutdown   chan struct{}
+	quit       chan struct{}
+	err        chan error
+	connected  bool
+	callbacker Callbacker
 }
 
 func New(cfg *Config) (*Conn, error) {
@@ -50,13 +46,9 @@ func New(cfg *Config) (*Conn, error) {
 		out:      make(chan string, 32),
 		shutdown: make(chan struct{}, 3),
 		quit:     make(chan struct{}),
-		err:      make(chan error, 3),
+		err:      make(chan error),
 	}
 	return conn, nil
-}
-
-func (conn *Conn) SetEmbed(embed Embed) {
-	conn.embedded = embed
 }
 
 func (conn *Conn) recv() {
@@ -128,6 +120,43 @@ func (conn *Conn) ping() {
 	}
 }
 
+func (conn *Conn) errs() {
+	for {
+		select {
+		case err := <-conn.err:
+			if err != nil {
+				conn.Logger().Warnf("[ ERROR ] %v", err)
+				conn.shutdown <- struct{}{}
+			} else {
+				return
+			}
+		}
+	}
+}
+
+func (conn *Conn) down() {
+	for {
+		select {
+		default:
+			if !conn.connected {
+				conn.quit <- struct{}{}
+				return
+			}
+		case <-conn.shutdown:
+			if conn.connected {
+				conn.callback(&Event{Code: DISCONNECTED})
+				conn.connected = false
+				conn.sock.Close()
+				close(conn.end)
+				conn.Wait()
+				close(conn.err)
+				conn.sock = nil
+				conn.io = nil
+			}
+		}
+	}
+}
+
 func (conn *Conn) Connect(server string, port uint, password ...string) (chan struct{}, error) {
 	host := fmt.Sprintf("%s:%d", server, port)
 
@@ -168,6 +197,7 @@ func (conn *Conn) postConnect() {
 	)
 
 	conn.end = make(chan struct{})
+	conn.err = make(chan error)
 	conn.Add(4)
 	go conn.call()
 	go conn.send()
@@ -176,8 +206,8 @@ func (conn *Conn) postConnect() {
 
 	conn.connected = true
 	conn.callback(&Event{Code: REGISTER})
-
-	go conn.base()
+	go conn.errs()
+	go conn.down()
 }
 
 func (conn *Conn) Disconnect() {
@@ -186,31 +216,6 @@ func (conn *Conn) Disconnect() {
 
 func (conn *Conn) Reconnect() (chan struct{}, error) {
 	return conn.Connect(conn.server, conn.port, conn.password)
-}
-
-func (conn *Conn) base() {
-	for {
-		select {
-		default:
-			if !conn.connected {
-				conn.quit <- struct{}{}
-				return
-			}
-		case err := <-conn.err:
-			conn.Logger().Warnf("[ ERROR ] %v", err)
-			conn.shutdown <- struct{}{}
-		case <-conn.shutdown:
-			if conn.connected {
-				conn.callback(&Event{Code: DISCONNECTED})
-				conn.connected = false
-				conn.sock.Close()
-				close(conn.end)
-				conn.Wait()
-				conn.sock = nil
-				conn.io = nil
-			}
-		}
-	}
 }
 
 func (conn *Conn) Logger() golog.Logger {
