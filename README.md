@@ -54,6 +54,12 @@ func main() {
 }
 ```
 
+## DESCRIPTION
+
+go-irc is yet another irc client library.
+
+**THE SOFTWARE IS ALPHA QUALITY. API MAY CHANGE WITHOUT NOTICE.**
+
 ## MISC
 
 Many codes was copied from [fluffle/goir](https://github.com/fluffle/goirc), and [thoj/go-ircevent](https://github.com/thoj/go-ircevent).
