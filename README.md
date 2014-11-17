@@ -18,7 +18,7 @@ func main() {
 		RealName: "ikusan",
 	})
 	conn.CallbackerFunc(func(conn *irc.Conn, e *irc.Event){
-		conn.DefaultCallback(e)
+		irc.DefaultCallback(conn, e)
 		switch e.Code {
 		case "001":
 			conn.Ping("ping")
